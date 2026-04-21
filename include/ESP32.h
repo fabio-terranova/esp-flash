@@ -1,0 +1,40 @@
+#ifndef INCLUDE_SRC_ESP32_H_
+#define INCLUDE_SRC_ESP32_H_
+
+#include "Serial.h"
+#include <cstdint>
+#include <string>
+
+namespace ESP32 {
+struct __attribute__((packed)) CommandHeader {
+  uint8_t  direction{0x00};
+  uint8_t  command;
+  uint16_t size;
+  uint32_t checksum;
+};
+
+struct __attribute__((packed)) ResponseHeader {
+  uint8_t  direction{0x01};
+  uint8_t  command;
+  uint16_t size;
+  uint32_t value;
+};
+
+class Device {
+public:
+  explicit Device(const std::string& port_file) : m_port(port_file.c_str()) {}
+
+  void reset_into_bootloader();
+  void sync();
+
+  size_t write(const Bytes& packet);
+  size_t read(Bytes& buffer);
+
+  Serial::Port& port() { return m_port; }
+
+private:
+  Serial::Port m_port;
+};
+} // namespace ESP32
+
+#endif // INCLUDE_SRC_ESP32_H_
