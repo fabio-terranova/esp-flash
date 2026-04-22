@@ -1,4 +1,5 @@
 #include "Serial.h"
+#include <termios.h>
 
 namespace Serial {
 namespace SLIP {
@@ -36,5 +37,19 @@ void Port::set_RTS(bool state) {
   if (ioctl(m_fd, state ? TIOCMBIS : TIOCMBIC, &control_bit) == -1) {
     throw std::system_error(errno, std::system_category(), "Failed to set RTS");
   }
+}
+
+void Port::configure(unsigned int speed) {
+  termios settings{};
+  if (tcgetattr(m_fd, &settings) != 0)
+    throw std::system_error(errno, std::system_category(),
+                            "Failed to set termios attributes");
+
+  cfmakeraw(&settings);
+  cfsetspeed(&settings, speed);
+
+  if (tcsetattr(m_fd, TCSANOW, &settings) != 0)
+    throw std::system_error(errno, std::system_category(),
+                            "Failed to set termios attributes");
 }
 } // namespace Serial

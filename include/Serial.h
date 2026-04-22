@@ -53,6 +53,8 @@ public:
     return *this;
   }
 
+  void configure(unsigned int speed);
+
   void set_DTR(bool state);
   void set_RTS(bool state);
 

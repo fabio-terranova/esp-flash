@@ -1,6 +1,7 @@
 #ifndef __ESP32_H__
 #define __ESP32_H__
 
+#include "Common.h"
 #include "Serial.h"
 #include <cstdint>
 #include <string>
@@ -22,7 +23,9 @@ struct __attribute__((packed)) ResponseHeader {
 
 class Device {
 public:
-  explicit Device(const std::string& port_file) : m_port(port_file.c_str()) {}
+  explicit Device(const std::string& port_file) : m_port(port_file.c_str()) {
+    m_port.configure(Config::BAUD);
+  }
 
   void reset_into_bootloader();
   void sync();
