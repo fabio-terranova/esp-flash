@@ -4,6 +4,7 @@
 #include "Common.h"
 #include "Serial.h"
 #include <cstdint>
+#include <memory>
 #include <string>
 
 namespace ESP32 {
@@ -23,8 +24,9 @@ struct __attribute__((packed)) ResponseHeader {
 
 class Device {
 public:
-  explicit Device(const std::string& port_file) : m_port(port_file.c_str()) {
-    m_port.configure(Config::kBaud);
+  explicit Device(std::unique_ptr<Serial::IPort> port)
+      : m_port(std::move(port)) {
+    m_port->configure(Config::kBaud);
   }
 
   void resetIntoBootloader();
@@ -33,10 +35,10 @@ public:
   size_t write(const Bytes& packet);
   size_t read(Bytes& buffer);
 
-  Serial::Port& port() { return m_port; }
+  Serial::IPort& port() { return *m_port; }
 
 private:
-  Serial::Port m_port;
+  std::unique_ptr<Serial::IPort> m_port;
 
   Bytes syncPacket();
 };

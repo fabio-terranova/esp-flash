@@ -42,18 +42,18 @@ void Device::resetIntoBootloader() {
   using Serial::HIGH;
   using Serial::LOW;
 
-  m_port.setDTR(HIGH);
+  m_port->setDTR(HIGH);
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  m_port.setDTR(LOW);
-  m_port.setRTS(HIGH);
+  m_port->setDTR(LOW);
+  m_port->setRTS(HIGH);
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  m_port.setDTR(HIGH);
-  m_port.setRTS(LOW);
+  m_port->setDTR(HIGH);
+  m_port->setRTS(LOW);
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  m_port.setDTR(LOW);
+  m_port->setDTR(LOW);
 }
 
 Bytes Device::syncPacket() {
@@ -80,7 +80,7 @@ void Device::sync() {
       if (!frame.has_value())
         continue;
 
-      const Bytes&   response = frame.value();
+      const Bytes& response = frame.value();
 
       ResponseHeader header;
       std::memcpy(&header, response.data(), sizeof(ResponseHeader));
@@ -96,7 +96,7 @@ void Device::sync() {
 }
 
 size_t Device::write(const Bytes& packet) {
-  ssize_t written = ::write(m_port.fd(), packet.data(), packet.size());
+  ssize_t written = ::write(m_port->fd(), packet.data(), packet.size());
   if (written < 0) {
     throw std::system_error(errno, std::system_category(), "Write failed");
   }
@@ -104,7 +104,7 @@ size_t Device::write(const Bytes& packet) {
 }
 
 size_t Device::read(Bytes& buffer) {
-  ssize_t read = ::read(m_port.fd(), buffer.data(), buffer.size());
+  ssize_t read = ::read(m_port->fd(), buffer.data(), buffer.size());
   if (read < 0) {
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
       return 0;

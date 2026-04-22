@@ -36,7 +36,17 @@ private:
 };
 } // namespace SLIP
 
-class Port {
+class IPort {
+public:
+  virtual ~IPort() = default;
+
+  virtual void configure(unsigned int speed) = 0;
+  virtual void setDTR(bool state)            = 0;
+  virtual void setRTS(bool state)            = 0;
+  virtual int  fd() const noexcept           = 0;
+};
+
+class Port : public IPort {
 public:
   explicit Port(const std::string& file)
       : m_fd(::open(file.c_str(), O_RDWR | O_NOCTTY | O_SYNC)) {

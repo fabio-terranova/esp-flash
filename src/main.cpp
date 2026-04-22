@@ -10,7 +10,11 @@ int main(int argc, const char** argv) {
   }
 
   try {
-    ESP32::Device esp32{argv[1]};
+    std::unique_ptr<Serial::IPort> port =
+        std::make_unique<Serial::Port>(argv[1]);
+
+    ESP32::Device esp32{std::move(port)};
+
     esp32.resetIntoBootloader();
     esp32.sync();
   } catch (const std::exception& e) {

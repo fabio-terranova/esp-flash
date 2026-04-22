@@ -1,8 +1,8 @@
 #include "Common.h"
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <thread>
-#include <chrono>
 
 void printHex(const Bytes& data) {
   for (const auto byte : data) {
