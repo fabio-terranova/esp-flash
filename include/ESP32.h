@@ -24,10 +24,10 @@ struct __attribute__((packed)) ResponseHeader {
 class Device {
 public:
   explicit Device(const std::string& port_file) : m_port(port_file.c_str()) {
-    m_port.configure(Config::BAUD);
+    m_port.configure(Config::kBaud);
   }
 
-  void reset_into_bootloader();
+  void resetIntoBootloader();
   void sync();
 
   size_t write(const Bytes& packet);
@@ -37,6 +37,8 @@ public:
 
 private:
   Serial::Port m_port;
+
+  Bytes syncPacket();
 };
 } // namespace ESP32
 

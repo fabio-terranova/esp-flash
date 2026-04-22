@@ -1,6 +1,8 @@
 #include "Common.h"
 #include <iomanip>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 void printHex(const Bytes& data) {
   for (const auto byte : data) {
@@ -8,4 +10,8 @@ void printHex(const Bytes& data) {
               << static_cast<int>(byte) << ' ';
   }
   std::cout << std::dec;
+}
+
+void msSleep(unsigned int ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }

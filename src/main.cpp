@@ -11,7 +11,7 @@ int main(int argc, const char** argv) {
 
   try {
     ESP32::Device esp32{argv[1]};
-    esp32.reset_into_bootloader();
+    esp32.resetIntoBootloader();
     esp32.sync();
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';

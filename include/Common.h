@@ -8,9 +8,10 @@
 using Bytes = std::vector<uint8_t>;
 
 void printHex(const Bytes& data);
+void msSleep(unsigned int ms);
 
 namespace Config {
-constexpr unsigned int BAUD = B115200;
+constexpr unsigned int kBaud = B115200;
 }
 
 #endif // __COMMON_H__

@@ -2,16 +2,19 @@
 #include "Common.h"
 #include "Serial.h"
 #include <cerrno>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <sys/types.h>
 #include <system_error>
 #include <thread>
 #include <unistd.h>
 
 namespace ESP32 {
-constexpr uint8_t SYNC = 0x08;
+constexpr uint8_t SYNC             = 0x08;
+constexpr int     kMaxSyncAttempts = 10;
 
 uint8_t checksum(const Bytes& data) {
   uint8_t checksum{0xEF};
@@ -33,34 +36,63 @@ Bytes commandPacket(uint8_t cmd, const Bytes& data) {
   return packet;
 }
 
-void Device::reset_into_bootloader() {
+void Device::resetIntoBootloader() {
   // DTR: GPIO0
   // RTS: EN
   using Serial::HIGH;
   using Serial::LOW;
 
-  m_port.set_DTR(HIGH);
+  m_port.setDTR(HIGH);
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  m_port.set_DTR(LOW);
-  m_port.set_RTS(HIGH);
+  m_port.setDTR(LOW);
+  m_port.setRTS(HIGH);
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  m_port.set_DTR(HIGH);
-  m_port.set_RTS(LOW);
+  m_port.setDTR(HIGH);
+  m_port.setRTS(LOW);
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  m_port.set_DTR(LOW);
+  m_port.setDTR(LOW);
+}
+
+Bytes Device::syncPacket() {
+  static Bytes packet = [] {
+    Bytes data{0x07, 0x07, 0x12, 0x20};
+    data.insert(data.end(), 32, 0x55);
+    return Serial::SLIP::encode(commandPacket(SYNC, data));
+  }();
+
+  return packet;
 }
 
 void Device::sync() {
-  Bytes data{0x07, 0x07, 0x12, 0x20};
-  data.insert(data.end(), 32, 0x55);
+  for (int attempt{}; attempt < kMaxSyncAttempts; ++attempt) {
+    write(syncPacket());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-  Bytes packet{Serial::SLIP::encode(commandPacket(SYNC, data))};
-  write(packet);
+    Serial::SLIP::Decoder decoder;
+    Bytes                 buffer(256);
 
-  // TODO: Wait for and check response to SYNC command
+    size_t bytesRead = read(buffer);
+    for (size_t i{0}; i < bytesRead; ++i) {
+      auto frame = decoder.feed(buffer[i]);
+      if (!frame.has_value())
+        continue;
+
+      const Bytes&   response = frame.value();
+
+      ResponseHeader header;
+      std::memcpy(&header, response.data(), sizeof(ResponseHeader));
+
+      if (header.direction != 0x01 || header.command != SYNC)
+        continue;
+
+      return;
+    }
+  }
+
+  throw std::runtime_error("SYNC failed: no valid response from device");
 }
 
 size_t Device::write(const Bytes& packet) {

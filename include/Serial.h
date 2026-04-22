@@ -4,6 +4,7 @@
 #include "Common.h"
 #include <cstdint>
 #include <fcntl.h>
+#include <optional>
 #include <sys/ioctl.h>
 #include <system_error>
 #include <unistd.h>
@@ -21,6 +22,18 @@ constexpr uint8_t ESC_END = 0334; // ESC ESC_END means END data byte
 constexpr uint8_t ESC_ESC = 0335; // ESC ESC_END means END data byte
 
 Bytes encode(const Bytes& data);
+
+class Decoder {
+public:
+  std::optional<Bytes> feed(uint8_t byte);
+  void                 reset();
+
+  const Bytes& buffer() const { return m_buffer; }
+
+private:
+  enum State { normal, escape } m_state = normal;
+  Bytes m_buffer;
+};
 } // namespace SLIP
 
 class Port {
@@ -55,8 +68,8 @@ public:
 
   void configure(unsigned int speed);
 
-  void set_DTR(bool state);
-  void set_RTS(bool state);
+  void setDTR(bool state);
+  void setRTS(bool state);
 
   int fd() const noexcept { return m_fd; }
 
