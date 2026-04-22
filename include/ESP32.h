@@ -7,6 +7,7 @@
 #include <memory>
 
 namespace ESP32 {
+constexpr uint32_t MAGIC_VALUE = 0x00F01D83;
 
 enum class Direction : uint8_t {
   hostToDevice = 0x00,
@@ -14,7 +15,8 @@ enum class Direction : uint8_t {
 };
 
 enum class Command : uint8_t {
-  SYNC = 0x08,
+  SYNC     = 0x08,
+  READ_REG = 0x0A,
 };
 
 struct __attribute__((packed)) CommandHeader {
@@ -40,6 +42,7 @@ public:
 
   void resetIntoBootloader();
   void sync();
+  bool checkChip();
 
   size_t write(const Bytes& packet);
   size_t read(Bytes& buffer);
@@ -50,6 +53,7 @@ private:
   std::unique_ptr<Serial::IPort> m_port;
 
   Bytes syncPacket();
+  Bytes readRegPacket(uint32_t address);
 };
 } // namespace ESP32
 

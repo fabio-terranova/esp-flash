@@ -1,7 +1,6 @@
 #include "ESP32.h"
 #include <exception>
 #include <iostream>
-#include <string>
 
 int main(int argc, const char** argv) {
   if (argc < 2) {
@@ -17,6 +16,10 @@ int main(int argc, const char** argv) {
 
     esp32.resetIntoBootloader();
     esp32.sync();
+    if (esp32.checkChip())
+      std::cout << "Found an ESP32!\n";
+    else
+      std::cout << "Wrong chip id...\n";
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
     return 1;

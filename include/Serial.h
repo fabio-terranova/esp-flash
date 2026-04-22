@@ -18,15 +18,16 @@ constexpr bool LOW  = false;
 namespace SLIP {
 constexpr uint8_t END     = 0300; // End of packet
 constexpr uint8_t ESC     = 0333; // Byte stuffing
-constexpr uint8_t ESC_END = 0334; // ESC ESC_END means END data byte
-constexpr uint8_t ESC_ESC = 0335; // ESC ESC_END means END data byte
+constexpr uint8_t ESC_END = 0334; // ESC ESC_END means END byte
+constexpr uint8_t ESC_ESC = 0335; // ESC ESC_ESC means ESC byte
 
 Bytes encode(const Bytes& data);
 
 class Decoder {
 public:
   std::optional<Bytes> feed(uint8_t byte);
-  void                 reset();
+
+  void reset();
 
   const Bytes& buffer() const { return m_buffer; }
 

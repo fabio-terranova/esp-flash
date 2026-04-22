@@ -95,6 +95,37 @@ void Device::sync() {
   throw std::runtime_error("SYNC failed: no valid response from device");
 }
 
+Bytes Device::readRegPacket(uint32_t address) {
+  Bytes data(4);
+  std::memcpy(data.data(), &address, sizeof(address));
+  return Serial::SLIP::encode(commandPacket(Command::READ_REG, data));
+}
+
+bool Device::checkChip() {
+  write(readRegPacket(0x40001000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  Serial::SLIP::Decoder decoder;
+  Bytes                 buffer(256);
+  size_t                bytesRead = read(buffer);
+  for (size_t i{0}; i < bytesRead; ++i) {
+    auto frame = decoder.feed(buffer[i]);
+    if (!frame.has_value())
+      continue;
+
+    const Bytes&   response = frame.value();
+    ResponseHeader header;
+    std::memcpy(&header, response.data(), sizeof(ResponseHeader));
+    if (header.direction != Direction::deviceToHost ||
+        header.command != Command::READ_REG)
+      continue;
+
+    return header.value == MAGIC_VALUE;
+  }
+
+  throw std::runtime_error("Chip check failed: no valid response from device");
+}
+
 size_t Device::write(const Bytes& packet) {
   ssize_t written = ::write(m_port->fd(), packet.data(), packet.size());
   if (written < 0) {
