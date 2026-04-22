@@ -41,7 +41,7 @@ public:
   }
 
   void resetIntoBootloader();
-  void sync();
+  void sync(const unsigned int maxAttempts);
   bool checkChip();
 
   size_t write(const Bytes& packet);

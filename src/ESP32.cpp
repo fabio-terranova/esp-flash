@@ -65,8 +65,8 @@ Bytes Device::syncPacket() {
   return packet;
 }
 
-void Device::sync() {
-  for (int attempt{}; attempt < kMaxSyncAttempts; ++attempt) {
+void Device::sync(const unsigned int maxAttempts) {
+  for (unsigned int attempt{0}; attempt < maxAttempts; ++attempt) {
     write(syncPacket());
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 

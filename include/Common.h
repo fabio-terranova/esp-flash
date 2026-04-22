@@ -11,7 +11,8 @@ void printHex(const Bytes& data);
 void msSleep(unsigned int ms);
 
 namespace Config {
-constexpr unsigned int kBaud = B115200;
-}
+constexpr unsigned int kBaud            = B115200;
+constexpr unsigned int kMaxSyncAttempts = 10;
+} // namespace Config
 
 #endif // __COMMON_H__
