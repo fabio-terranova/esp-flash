@@ -13,8 +13,7 @@
 #include <unistd.h>
 
 namespace ESP32 {
-constexpr uint8_t SYNC             = 0x08;
-constexpr int     kMaxSyncAttempts = 10;
+constexpr int kMaxSyncAttempts = 10;
 
 uint8_t checksum(const Bytes& data) {
   uint8_t checksum{0xEF};
@@ -24,7 +23,7 @@ uint8_t checksum(const Bytes& data) {
   return checksum;
 }
 
-Bytes commandPacket(uint8_t cmd, const Bytes& data) {
+Bytes commandPacket(Command cmd, const Bytes& data) {
   CommandHeader header{.command  = cmd,
                        .size     = static_cast<uint16_t>(data.size()),
                        .checksum = static_cast<uint32_t>(checksum(data))};
@@ -60,7 +59,7 @@ Bytes Device::syncPacket() {
   static Bytes packet = [] {
     Bytes data{0x07, 0x07, 0x12, 0x20};
     data.insert(data.end(), 32, 0x55);
-    return Serial::SLIP::encode(commandPacket(SYNC, data));
+    return Serial::SLIP::encode(commandPacket(Command::SYNC, data));
   }();
 
   return packet;
@@ -85,7 +84,8 @@ void Device::sync() {
       ResponseHeader header;
       std::memcpy(&header, response.data(), sizeof(ResponseHeader));
 
-      if (header.direction != 0x01 || header.command != SYNC)
+      if (header.direction != Direction::deviceToHost ||
+          header.command != Command::SYNC)
         continue;
 
       return;

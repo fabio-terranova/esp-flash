@@ -32,9 +32,9 @@ std::optional<Bytes> Decoder::feed(uint8_t byte) {
       // Ignore empty frames
       return std::nullopt;
     }
-    if (m_state == escape) {
+    if (m_state == State::escape) {
       // END after ESC is invalid, reset state and buffer
-      m_state = normal;
+      m_state = State::normal;
       m_buffer.clear();
       return std::nullopt;
     }
@@ -45,11 +45,11 @@ std::optional<Bytes> Decoder::feed(uint8_t byte) {
   }
   // Handle ESC byte
   if (byte == ESC) {
-    m_state = escape;
+    m_state = State::escape;
     return std::nullopt;
   }
   // Handle bytes after ESC
-  if (m_state == escape) {
+  if (m_state == State::escape) {
     switch (byte) {
     case ESC_END:
       m_buffer.push_back(END);
@@ -61,7 +61,7 @@ std::optional<Bytes> Decoder::feed(uint8_t byte) {
       m_buffer.clear();
       break;
     }
-    m_state = normal;
+    m_state = State::normal;
     return std::nullopt;
   }
 
@@ -72,7 +72,7 @@ std::optional<Bytes> Decoder::feed(uint8_t byte) {
 
 void Decoder::reset() {
   m_buffer.clear();
-  m_state = normal;
+  m_state = State::normal;
 }
 } // namespace SLIP
 

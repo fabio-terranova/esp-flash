@@ -31,7 +31,8 @@ public:
   const Bytes& buffer() const { return m_buffer; }
 
 private:
-  enum State { normal, escape } m_state = normal;
+  enum class State { normal, escape };
+  State m_state = State::normal;
   Bytes m_buffer;
 };
 } // namespace SLIP

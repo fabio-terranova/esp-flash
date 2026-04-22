@@ -5,21 +5,30 @@
 #include "Serial.h"
 #include <cstdint>
 #include <memory>
-#include <string>
 
 namespace ESP32 {
+
+enum class Direction : uint8_t {
+  hostToDevice = 0x00,
+  deviceToHost = 0x01,
+};
+
+enum class Command : uint8_t {
+  SYNC = 0x08,
+};
+
 struct __attribute__((packed)) CommandHeader {
-  uint8_t  direction{0x00};
-  uint8_t  command;
-  uint16_t size;
-  uint32_t checksum;
+  Direction direction{Direction::hostToDevice}; // uint8_t
+  Command   command;                            // uint8_t
+  uint16_t  size;
+  uint32_t  checksum;
 };
 
 struct __attribute__((packed)) ResponseHeader {
-  uint8_t  direction{0x01};
-  uint8_t  command;
-  uint16_t size;
-  uint32_t value;
+  Direction direction{Direction::deviceToHost}; // uint8_t
+  Command   command;                            // uint8_t
+  uint16_t  size;
+  uint32_t  value;
 };
 
 class Device {
