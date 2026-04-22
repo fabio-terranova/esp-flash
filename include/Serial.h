@@ -1,5 +1,5 @@
-#ifndef INCLUDE_SRC_SLIP_H_
-#define INCLUDE_SRC_SLIP_H_
+#ifndef __SERIAL_H__
+#define __SERIAL_H__
 
 #include "Common.h"
 #include <cstdint>
@@ -64,4 +64,4 @@ private:
 
 } // namespace Serial
 
-#endif // INCLUDE_SRC_SLIP_H_
+#endif // __SERIAL_H__

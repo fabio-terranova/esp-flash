@@ -1,5 +1,5 @@
-#ifndef INCLUDE_SRC_ESP32_H_
-#define INCLUDE_SRC_ESP32_H_
+#ifndef __ESP32_H__
+#define __ESP32_H__
 
 #include "Serial.h"
 #include <cstdint>
@@ -37,4 +37,4 @@ private:
 };
 } // namespace ESP32
 
-#endif // INCLUDE_SRC_ESP32_H_
+#endif // __ESP32_H__
