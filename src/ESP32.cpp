@@ -13,7 +13,6 @@
 #include <unistd.h>
 
 namespace ESP32 {
-constexpr int kMaxSyncAttempts = 10;
 
 uint8_t checksum(const Bytes& data) {
   uint8_t checksum{0xEF};
