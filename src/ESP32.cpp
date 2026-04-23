@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <sys/types.h>
 #include <system_error>
