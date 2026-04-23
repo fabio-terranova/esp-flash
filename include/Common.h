@@ -16,7 +16,7 @@ std::string toHexString(T val) {
   return std::format("{:0{}x}", +val, width);
 }
 
-void printBuffer(const std::vector<uint8_t>& buffer, uint32_t stride,
+void printBuffer(const std::vector<uint8_t>& buffer, uint32_t stride = 16,
                  bool printAscii = false);
 void msSleep(unsigned int ms);
 
