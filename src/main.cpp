@@ -4,8 +4,8 @@
 #include <iostream>
 
 int main(int argc, const char* argv[]) {
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <serial_port>\n";
+  if (argc < 3) {
+    std::cerr << "Usage: " << argv[0] << " <serial_port> <file>\n";
     return 1;
   }
 
@@ -23,6 +23,7 @@ int main(int argc, const char* argv[]) {
     else
       std::cout << "Wrong chip id...\n";
 
+    // TODO: Implement flashing
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
     return 1;

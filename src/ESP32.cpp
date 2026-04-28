@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <sys/types.h>
 #include <system_error>
@@ -14,27 +14,6 @@
 #include <unistd.h>
 
 namespace ESP32 {
-
-uint8_t checksum(const Bytes& data) {
-  uint8_t checksum{0xEF};
-  for (const auto byte : data) {
-    checksum ^= byte;
-  }
-  return checksum;
-}
-
-Bytes commandPacket(Command cmd, const Bytes& data) {
-  CommandHeader header{.command  = cmd,
-                       .size     = static_cast<uint16_t>(data.size()),
-                       .checksum = static_cast<uint32_t>(checksum(data))};
-
-  Bytes packet(sizeof(header) + data.size());
-  std::memcpy(packet.data(), &header, sizeof(header));
-  std::memcpy(packet.data() + sizeof(header), data.data(), data.size());
-
-  return packet;
-}
-
 void Device::resetIntoBootloader() {
   // DTR: GPIO0
   // RTS: EN
@@ -51,79 +30,93 @@ void Device::resetIntoBootloader() {
   m_port->setDTR(HIGH);
   m_port->setRTS(LOW);
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-  m_port->setDTR(LOW);
 }
 
-Bytes Device::syncPacket() {
-  static Bytes packet = [] {
-    Bytes data{0x07, 0x07, 0x12, 0x20};
-    data.insert(data.end(), 32, 0x55);
-    return Serial::SLIP::encode(commandPacket(Command::SYNC, data));
-  }();
+Bytes Request::rawPacket() const {
+  CommandHeader header{.command  = m_cmd,
+                       .size     = static_cast<uint16_t>(m_payload.size()),
+                       .checksum = static_cast<uint32_t>(checksum(m_payload))};
+
+  Bytes packet(sizeof(header) + m_payload.size());
+  std::memcpy(packet.data(), &header, sizeof(header));
+  std::memcpy(packet.data() + sizeof(header), m_payload.data(),
+              m_payload.size());
 
   return packet;
 }
+std::optional<Response> Device::transact(const Request& req,
+                                         unsigned int   maxAttempts) {
+  const Bytes   encodedPacket = req.encodedPacket();
+  const Command expectedCmd   = req.command();
 
-void Device::sync(const unsigned int maxAttempts) {
-  for (unsigned int attempt{0}; attempt < maxAttempts; ++attempt) {
-    write(syncPacket());
+  for (unsigned int attempt{}; attempt < maxAttempts; ++attempt) {
+    write(encodedPacket);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     Serial::SLIP::Decoder decoder;
     Bytes                 buffer(256);
+    size_t                bytesRead = read(buffer);
 
-    size_t bytesRead = read(buffer);
     for (size_t i{0}; i < bytesRead; ++i) {
       auto frame = decoder.feed(buffer[i]);
-      if (!frame.has_value())
+      if (!frame.has_value()) {
         continue;
+      }
 
-      const Bytes& response = frame.value();
+      const Bytes& rawResponse = frame.value();
 
-      ResponseHeader header;
-      std::memcpy(&header, response.data(), sizeof(ResponseHeader));
-
-      if (header.direction != Direction::deviceToHost ||
-          header.command != Command::SYNC)
+      if (rawResponse.size() < sizeof(ResponseHeader)) {
         continue;
+      }
 
-      return;
+      Response response(rawResponse);
+
+      if (response.direction() == Direction::deviceToHost &&
+          response.command() == expectedCmd) {
+        return response;
+      }
     }
   }
 
-  throw std::runtime_error("SYNC failed: no valid response from device");
+  return std::nullopt;
 }
 
-Bytes Device::readRegPacket(uint32_t address) {
+Bytes Device::syncPayload() {
+  static Bytes payload = [] {
+    Bytes data{0x07, 0x07, 0x12, 0x20};
+    data.insert(data.end(), 32, 0x55);
+    return data;
+  }();
+
+  return payload;
+}
+
+void Device::sync(const unsigned int maxAttempts) {
+  static Request req(Command::SYNC, syncPayload());
+  auto           response = transact(req, maxAttempts);
+
+  if (!response.has_value()) {
+    throw std::runtime_error("Sync failed: no valid response from device");
+  }
+}
+
+Bytes Device::readRegPayload(uint32_t address) {
   Bytes data(4);
   std::memcpy(data.data(), &address, sizeof(address));
-  return Serial::SLIP::encode(commandPacket(Command::READ_REG, data));
+  return data;
 }
 
 bool Device::checkChip() {
-  write(readRegPacket(0x40001000));
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  static Request req(Command::READ_REG, readRegPayload(0x40001000));
 
-  Serial::SLIP::Decoder decoder;
-  Bytes                 buffer(256);
-  size_t                bytesRead = read(buffer);
-  for (size_t i{0}; i < bytesRead; ++i) {
-    auto frame = decoder.feed(buffer[i]);
-    if (!frame.has_value())
-      continue;
+  auto response = transact(req);
 
-    const Bytes&   response = frame.value();
-    ResponseHeader header;
-    std::memcpy(&header, response.data(), sizeof(ResponseHeader));
-    if (header.direction != Direction::deviceToHost ||
-        header.command != Command::READ_REG)
-      continue;
-
-    return header.value == MAGIC_VALUE;
+  if (!response.has_value()) {
+    throw std::runtime_error(
+        "Chip check failed: no valid response from device");
   }
 
-  throw std::runtime_error("Chip check failed: no valid response from device");
+  return response.value().value() == MAGIC_VALUE;
 }
 
 size_t Device::write(const Bytes& packet) {

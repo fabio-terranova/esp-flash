@@ -16,9 +16,10 @@ std::string toHexString(T val) {
   return std::format("{:0{}x}", +val, width);
 }
 
-void printBuffer(const std::vector<uint8_t>& buffer, uint32_t stride = 16,
-                 bool printAscii = false);
-void msSleep(unsigned int ms);
+void    printBuffer(const std::vector<uint8_t>& buffer, uint32_t stride = 16,
+                    bool printAscii = true);
+void    msSleep(unsigned int ms);
+uint8_t checksum(const Bytes& data);
 
 namespace Config {
 constexpr unsigned int kBaud            = B115200;

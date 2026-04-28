@@ -37,3 +37,11 @@ void printBuffer(const std::vector<uint8_t>& buffer, uint32_t stride,
     std::cout << '\n';
   }
 }
+
+uint8_t checksum(const Bytes& data) {
+  uint8_t checksum{0xEF};
+  for (const auto byte : data) {
+    checksum ^= byte;
+  }
+  return checksum;
+}
